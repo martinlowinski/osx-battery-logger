@@ -1,5 +1,6 @@
 
 Battery logger inspired by James Davenport's, written using AWK. 
+The recorded data is visualized using D3.js.
 
 It logs information about the state of your battery pulled from `ioreg` and stores it into a CSV file. In particular, the current version stores the following data on each invocation:
 
