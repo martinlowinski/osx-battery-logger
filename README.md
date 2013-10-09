@@ -48,7 +48,7 @@ Then save it in `~/Library/LaunchAgents/com.codiform.OSXBatteryLogger.plist` and
 For more about launchd and tools to help you manage it, I recommend [Nathan Grigg's introduction][launchd-ng] and the [launch man page][launchd-man].
 
 ## Header
-If you want a header for the CSV File, then either create the file before you run the script or modify it afterwards to include a line like:
+A header for the CSV file is needed such that D3.js. If you create a new file, make sure that the following line is included:
 
     Date (UTC),Cycle Count,Design Capacity,Max Capacity,Current Capacity,External Connected
 
