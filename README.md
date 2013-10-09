@@ -50,7 +50,7 @@ For more about launchd and tools to help you manage it, I recommend [Nathan Grig
 ## Header
 If you want a header for the CSV File, then either create the file before you run the script or modify it afterwards to include a line like:
 
-    Date (UTC), Cycle Count, Design Capacity, Max Capacity, Current Capacity, External Connected
+    Date (UTC),Cycle Count,Design Capacity,Max Capacity,Current Capacity,External Connected
 
 [launchd-man]: https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man5/launchd.plist.5.html "launchd.plist - Mac Developer Library"
 [launchd-ng]: http://nathangrigg.net/2012/07/schedule-jobs-using-launchd/ "Schedule jobs using launchd - Nathan Grigg"
