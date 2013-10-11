@@ -29,18 +29,6 @@ body {
   stroke-width: 2px;
 }
 
-.line2 {
-  fill: none;
-	stroke: blue;
-  stroke-width: 2px;
-}
-
-.line3 {
-  fill: none;
-	stroke: black;
-  stroke-width: 2px;
-}
-
 .overlay {
   fill: none;
   pointer-events: all;
@@ -60,14 +48,19 @@ body {
 <script src="http://d3js.org/d3.v3.js"></script>
 <script>
 
-var margin = {top: 20, right: 50, bottom: 30, left: 50},
+// Positioning
+var margin = {top: 20, right: 80, bottom: 30, left: 50},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
+
+// Colors
+var color = d3.scale.category10();
 
 var parseDate = d3.time.format("%d-%b-%y").parse,
     bisectDate = d3.bisector(function(d) { return d.date; }).left,
     formatValue = function(d) { return d3.format(".0f")(d) + " mAh"; };
 
+// Axis
 var x = d3.time.scale()
     .range([0, width]);
 
@@ -86,41 +79,63 @@ var yAxis = d3.svg.axis()
 		.tickPadding(10)
 		.orient("left");
 
+// Plot data
 var line = d3.svg.line()
     .x(function(d) { return x(d.date); })
-    .y(function(d) { return y(d.current_cap); });
+    .y(function(d) { return y(d.capacity); });
 
-var line2 = d3.svg.line()
-    .x(function(d) { return x(d.date); })
-    .y(function(d) { return y(d.max_cap); });
-
-var line3 = d3.svg.line()
-    .x(function(d) { return x(d.date); })
-    .y(function(d) { return y(d.design_cap); });
-
+// Plot
 var svg = d3.select("#container").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+// Parse data
 d3.csv("battery-log.csv", function(error, data) {
+	// Filter some columns
+	color.domain(d3.keys(data[0]).filter(function(key) { return key !== "Date (UTC)" && key !== "Cycle Count" && key !== "External Connected"; }));
+
   data.forEach(function(d) {
     d.date = Date.parse(d["Date (UTC)"]);
-    d.current_cap = +d["Current Capacity"];
-    d.max_cap = +d["Max Capacity"];
-    d.design_cap = +d["Design Capacity"];
   });
 
   data.sort(function(a, b) {
     return a.date - b.date;
   });
 
+	var capacities = color.domain().map(function(name) {
+    return {
+      name: name,
+      values: data.map(function(d) {
+        return {date: d.date, capacity: +d[name]};
+      })
+    };
+  });
+
+	// Set Ranges
   x.domain([data[0].date, data[data.length - 1].date]);
 	y.domain([
-		d3.min(data, function(d) { return Math.min(d.current_cap, d.max_cap); }),
-		d3.max(data, function(d) { return d.design_cap; })
+		d3.min(capacities, function(c) { return d3.min(c.values, function(v) { return v.capacity; }); }),
+		d3.max(capacities, function(c) { return d3.max(c.values, function(v) { return v.capacity; }); })
 	]);
+
+	var capacity = svg.selectAll(".capacity")
+      .data(capacities)
+    .enter().append("g")
+      .attr("class", "capacity");
+
+  capacity.append("path")
+      .attr("class", "line")
+      .attr("d", function(d) { return line(d.values); })
+      .style("stroke", function(d) { return color(d.name); });
+
+  capacity.append("text")
+      .datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; })
+      .attr("transform", function(d) { return "translate(" + x(d.value.date) + "," + y(d.value.capacity) + ")"; })
+      .attr("x", 3)
+      .attr("dy", ".35em")
+      .text(function(d) { return d.name; });
 
 	svg.append("linearGradient")
       .attr("id", "capacity-gradient")
@@ -152,50 +167,6 @@ d3.csv("battery-log.csv", function(error, data) {
       .attr("dy", ".71em")
       .style("text-anchor", "end")
       .text("Capacity (mAh)");
-
-  svg.append("path")
-      .datum(data)
-      .attr("class", "line")
-      .attr("d", line);
-
-  svg.append("path")
-      .datum(data)
-      .attr("class", "line2")
-      .attr("d", line2);
-
-  svg.append("path")
-      .datum(data)
-      .attr("class", "line3")
-      .attr("d", line3);
-
-  var focus = svg.append("g")
-      .attr("class", "focus")
-      .style("display", "none");
-
-  focus.append("circle")
-      .attr("r", 4.5);
-
-  focus.append("text")
-      .attr("x", 9)
-      .attr("dy", ".35em");
-
-  svg.append("rect")
-      .attr("class", "overlay")
-      .attr("width", width)
-      .attr("height", height)
-      .on("mouseover", function() { focus.style("display", null); })
-      .on("mouseout", function() { focus.style("display", "none"); })
-      .on("mousemove", mousemove);
-
-  function mousemove() {
-    var x0 = x.invert(d3.mouse(this)[0]),
-        i = bisectDate(data, x0, 1),
-        d0 = data[i - 1],
-        d1 = data[i],
-        d = x0 - d0.date > d1.date - x0 ? d1 : d0;
-    focus.attr("transform", "translate(" + x(d.date) + "," + y(d.current_cap) + ")");
-    focus.select("text").text(formatValue(d.current_cap));
-  }
 });
 
 </script>
